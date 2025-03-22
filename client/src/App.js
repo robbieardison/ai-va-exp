@@ -1,18 +1,57 @@
 import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
-import { marked } from 'marked'; // Import marked
+import { marked } from 'marked';
+import { auth } from './firebaseConfig';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "firebase/auth";
 import './App.css';
 
 function App() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const chatContainerRef = useRef(null);
+  const [user, setUser] = useState(null);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   useEffect(() => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
+
+    const unsubscribe = auth.onAuthStateChanged((authUser) => {
+      if (authUser) {
+        setUser(authUser);
+      } else {
+        setUser(null);
+      }
+    });
+
+    return () => unsubscribe();
   }, [messages]);
+
+  const handleSignUp = async () => {
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+      alert(error.message);
+    }
+  };
+
+  const handleSignIn = async () => {
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+      alert(error.message);
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      alert(error.message);
+    }
+  };
 
   const sendMessage = async () => {
     if (input.trim() === '') return;
@@ -22,9 +61,14 @@ function App() {
     setInput('');
 
     try {
-      const response = await axios.post('/chat', { message: input });
+      const token = await user.getIdToken();
+      const response = await axios.post('/chat', { message: input }, {
+        headers: {
+          Authorization: token,
+        },
+      });
       const botMessage = {
-        text: marked(response.data.response), // Convert Markdown to HTML
+        text: marked(response.data.response),
         sender: 'chatbot',
       };
       setMessages((prevMessages) => [...prevMessages, botMessage]);
@@ -33,6 +77,17 @@ function App() {
       setMessages((prevMessages) => [...prevMessages, errorMessage]);
     }
   };
+
+  if (!user) {
+    return (
+      <div className="auth-container">
+        <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
+        <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
+        <button onClick={handleSignIn}>Sign In</button>
+        <button onClick={handleSignUp}>Sign Up</button>
+      </div>
+    );
+  }
 
   return (
     <div className="chat-app">
@@ -55,6 +110,7 @@ function App() {
           onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
         />
         <button onClick={sendMessage}>Send</button>
+        <button onClick={handleSignOut}>Sign Out</button>
       </div>
     </div>
   );

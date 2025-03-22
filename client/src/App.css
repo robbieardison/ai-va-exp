@@ -46,3 +46,16 @@ input {
 button {
   padding: 5px 10px;
 }
+
+.auth-container {
+  width: 300px;
+  margin: 50px auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.auth-container input,
+.auth-container button {
+  margin-bottom: 10px;
+  padding: 8px;
+}
