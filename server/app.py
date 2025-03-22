@@ -1,11 +1,11 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, g
 import google.generativeai as genai
 import os
 from dotenv import load_dotenv
 from flask_cors import CORS
 import firebase_admin
 import json
-from firebase_admin import credentials, db
+from firebase_admin import credentials, db, auth
 
 app = Flask(__name__)
 CORS(app)
@@ -67,7 +67,7 @@ def chat():
         user_message = data['message']
 
         # Store user message in Firebase Realtime Database with user ID
-        chat_ref = db.reference(f'users/{g.uid}/chat')
+        chat_ref = db.reference(f'users/{g.uid}/chat')  # Use g.uid here
         chat_ref.push({'role': 'user', 'parts': user_message})
 
         # Retrieve conversation history for the user from Firebase

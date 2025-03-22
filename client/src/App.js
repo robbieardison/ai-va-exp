@@ -12,6 +12,7 @@ function App() {
   const [user, setUser] = useState(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false); // Add loading state
 
   useEffect(() => {
     if (chatContainerRef.current) {
@@ -48,6 +49,7 @@ function App() {
   const handleSignOut = async () => {
     try {
       await signOut(auth);
+      setMessages([]); // Clear chat messages
     } catch (error) {
       alert(error.message);
     }
@@ -59,6 +61,7 @@ function App() {
     const newMessage = { text: input, sender: 'user' };
     setMessages((prevMessages) => [...prevMessages, newMessage]);
     setInput('');
+    setIsLoading(true); // Set loading to true
 
     try {
       const token = await user.getIdToken();
@@ -72,9 +75,11 @@ function App() {
         sender: 'chatbot',
       };
       setMessages((prevMessages) => [...prevMessages, botMessage]);
+      setIsLoading(false); // Set loading to false
     } catch (error) {
       const errorMessage = { text: `Error: ${error.message}`, sender: 'error' };
       setMessages((prevMessages) => [...prevMessages, errorMessage]);
+      setIsLoading(false); // Set loading to false
     }
   };
 
@@ -101,6 +106,12 @@ function App() {
             )}
           </div>
         ))}
+        {isLoading && (
+          <div className="loading">
+            <div className="spinner"></div>
+            Lagi mikir jawaban nih...
+          </div>
+        )}
       </div>
       <div className="input-area">
         <input
